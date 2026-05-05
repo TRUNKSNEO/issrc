@@ -15,6 +15,18 @@ PrivilegesRequired=lowest
 
 program Script_Test; { Test 'program' keyword parses }
 
+{ Register* coverage (uPSR_* and Setup.ScriptClasses.pas):
+  Function                        Test Site
+  RegisterConstructor             Test_RegisteredMethods (TStringList.Create)
+  RegisterVirtualConstructor      Test_VirtualConstructor (TComponent.Create)
+  RegisterMethod                  Test_RegisteredMethods (Add/Delete/IndexOf)
+  RegisterVirtualMethod           Test_TPersistentAssign (Assign), Test_RegisteredMethods (Find)
+  RegisterVirtualAbstractMethod   Test_TStringStream (Read/Seek), Test_RegisteredMethods (Clear/Delete)
+  RegisterPropertyHelper          Test_RegisteredMethods (Sorted/CommaText), Test_TStringStream (Position/Size)
+  RegisterEventPropertyHelper     Test_ProcVarScript (TStringList.OnChange)
+  RegisterDelphiFunction          Test_IDispatchInvoke (CreateOleObject)
+  RegisterFunctionName            Test_ExternalDll (DllGetLastError) }
+
 procedure CheckTrue(const Value: Boolean);
 begin
   if not Value then
@@ -2616,6 +2628,19 @@ begin
   end;
 end;
 
+procedure Test_VirtualConstructor;
+var
+  Component: TComponent;
+begin
+  Component := TComponent.Create(nil);
+  try
+    CheckTrue(Component <> nil);
+    CheckTrue(Component is TComponent);
+  finally
+    Component.Free;
+  end;
+end;
+
 function Test_ExternalDll_GetCurrentProcessId: Cardinal; external 'GetCurrentProcessId@kernel32.dll stdcall';
 procedure Test_ExternalDll_SetLastError(ErrorCode: Cardinal); external 'SetLastError@kernel32.dll stdcall';
 
@@ -2713,6 +2738,7 @@ begin
   Test_CastStringToInteger;
   Test_FindFirstNextClose;
   Test_TPersistentAssign;
+  Test_VirtualConstructor;
   Test_ExternalDll;
 end;
 
