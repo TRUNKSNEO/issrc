@@ -72,6 +72,6 @@ Under `ISHelp/ISHelpGen/`:
 - To run tests, run `test.bat` and verify 0 exit code. This also compiles `ISTestTool` first.
 
 ## Other information
-- When creating a new file: immediately `git add` to stage it.
+- When creating a new file: immediately `git add` it, but only if still untracked.
 - Otherwise treat Git as read-only.
 - A task is not complete until the relevant compilation succeeds with 0 errors.
