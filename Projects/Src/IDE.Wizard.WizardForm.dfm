@@ -755,7 +755,7 @@ object WizardForm: TWizardForm
             Width = 89
             Height = 23
             Anchors = [akTop, akRight]
-            Caption = 'Dow&nload...'
+            Caption = 'D&ownload...'
             TabOrder = 9
           end
         end
@@ -778,7 +778,7 @@ object WizardForm: TWizardForm
             Height = 16
             Anchors = [akLeft, akTop, akRight]
             AutoSize = False
-            Caption = 'Application file type &name:'
+            Caption = 'Application file type na&me:'
             FocusControl = AppAssocNameEdit
             TabOrder = 1
             WordWrap = True
@@ -1033,7 +1033,7 @@ object WizardForm: TWizardForm
             Width = 512
             Height = 17
             Anchors = [akLeft, akTop, akRight]
-            Caption = '&Non administrative install mode (install for current user only)'
+            Caption = 'Non a&dministrative install mode (install for current user only)'
             TabOrder = 2
           end
           object PrivilegesRequiredOverridesAllowedCommandLineCheckbox: TCheckBox
@@ -1100,16 +1100,17 @@ object WizardForm: TWizardForm
           object AppRegistrySettingsLabel: TNewStaticText
             Left = 36
             Top = 60
-            Width = 156
-            Height = 14
+            Width = 512
+            Height = 16
             Anchors = [akLeft, akTop, akRight]
+            AutoSize = False
             Caption = 'Settings (for all keys and values):'
             TabOrder = 3
           end
           object AppRegistryUninsDeleteKeyCheck: TCheckBox
             Left = 44
             Top = 100
-            Width = 225
+            Width = 504
             Height = 17
             Caption = 'Also delete keys which are not empty'
             TabOrder = 5
@@ -1117,7 +1118,7 @@ object WizardForm: TWizardForm
           object AppRegistryUninsDeleteKeyIfEmptyCheck: TCheckBox
             Left = 36
             Top = 80
-            Width = 225
+            Width = 512
             Height = 17
             Caption = 'Delete keys which are empty on uninstall'
             Checked = True
@@ -1127,7 +1128,7 @@ object WizardForm: TWizardForm
           object AppRegistryUninsDeleteValueCheck: TCheckBox
             Left = 36
             Top = 130
-            Width = 225
+            Width = 512
             Height = 17
             Caption = 'Delete values on uninstall'
             Checked = True
