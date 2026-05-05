@@ -124,8 +124,6 @@ begin
       
       { Check for expression-supporting directives }
       ExpectIdent := SameText(Directive, 'define') or SameText(Directive, 'dim') or SameText(Directive, 'redim');
-
-      { Check against the expression-supporting directive set }
       if not ExpectIdent and not SameText(Directive, 'if') and not SameText(Directive, 'elif') and
          not SameText(Directive, 'emit') and not SameText(Directive, 'expr') and
          not SameText(Directive, 'insert') then

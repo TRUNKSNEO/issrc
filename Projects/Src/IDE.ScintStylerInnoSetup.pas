@@ -366,7 +366,7 @@ type
   end;
 
 var
-  ISPPDirectives: array of TISPPDirective; { Initialized below }
+  ISPPDirectives: array of TISPPDirective; { Initialized below. Note this list is *not* only used to build a word list, but also in HandleCompilerDirective. }
 
 const
   ISPPPragmaSubDirectives: array of TScintRawString = [
