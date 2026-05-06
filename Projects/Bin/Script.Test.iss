@@ -15,8 +15,8 @@ PrivilegesRequired=lowest
 
 program Script_Test; { Test 'program' keyword parses }
 
-{ Register* coverage (uPSR_* and Setup.ScriptClasses.pas):
-  Function                        Test Site
+{ Register* coverage:
+  Function                        Test Site (uPSR_*)
   RegisterConstructor             Test_RegisteredMethods (TStringList.Create)
   RegisterVirtualConstructor      Test_VirtualConstructor (TComponent.Create)
   RegisterMethod                  Test_RegisteredMethods (Add/Delete/IndexOf)
