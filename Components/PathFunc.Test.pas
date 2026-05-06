@@ -74,6 +74,13 @@ procedure PathFuncRunTests;
       raise Exception.Create('PathStartsWith test failed');
   end;
 
+  procedure TestPathStartsWithCaseSensitive(const S, AStartsWith: String;
+    const ExpectedResult: Boolean);
+  begin
+    if PathStartsWith(S, AStartsWith, False) <> ExpectedResult then
+      raise Exception.Create('PathStartsWith test failed');
+  end;
+
   procedure TestPathEndsWith(const IgnoreCase: Boolean;
     const S, AEndsWith: String; const ExpectedResult: Boolean);
   begin
@@ -154,6 +161,27 @@ procedure PathFuncRunTests;
       raise Exception.Create('PathStrFind test failed');
   end;
 
+  procedure TestPathStrNextChar(const S: String;
+    const Offset, ExpectedOffset: Integer);
+  begin
+    const P = PChar(S);
+    if PathStrNextChar(P + Offset) <> P + ExpectedOffset then
+      raise Exception.Create('PathStrNextChar test failed');
+  end;
+
+  procedure TestPathStrScan(const S: String; const C: Char;
+    const ExpectedOffset: Integer);
+  begin
+    const P = PChar(S);
+    var ExpectedResult: PChar;
+    if ExpectedOffset >= 0 then
+      ExpectedResult := P + ExpectedOffset
+    else
+      ExpectedResult := nil;
+    if PathStrScan(P, C) <> ExpectedResult then
+      raise Exception.Create('PathStrScan test failed');
+  end;
+
   procedure TestAddBackslash(const S, ExpectedResult: String);
   begin
     if AddBackslash(S) <> ExpectedResult then
@@ -204,6 +232,13 @@ procedure PathFuncRunTests;
       raise Exception.Create('PathHasSubstringAt test failed');
   end;
 
+  procedure TestPathHasSubstringAtCaseSensitive(const S, Substring: String;
+    const Offset: Integer; const ExpectedResult: Boolean);
+  begin
+    if PathHasSubstringAt(S, Substring, Offset, False) <> ExpectedResult then
+      raise Exception.Create('PathHasSubstringAt test failed');
+  end;
+
   procedure TestPathHasInvalidCharacters(const S: String;
     const AllowDriveLetterColon, ExpectedResult: Boolean);
   begin
@@ -247,6 +282,12 @@ procedure PathFuncRunTests;
       raise Exception.Create('PathConvertNormalToSuper test failed');
   end;
 
+  procedure TestPathConvertNormalToSuperStr(const Filename, ExpectedResult: String);
+  begin
+    if PathConvertNormalToSuper(Filename) <> ExpectedResult then
+      raise Exception.Create('PathConvertNormalToSuper test failed');
+  end;
+
   procedure TestPathConvertSuperToNormal(const Filename, ExpectedResult: String);
   begin
     if PathConvertSuperToNormal(Filename) <> ExpectedResult then
@@ -269,6 +310,13 @@ procedure PathFuncRunTests;
     const Offset, ExpectedResult: Integer);
   begin
     if PathPos(C, S, Offset) <> ExpectedResult then
+      raise Exception.Create('PathPos test failed');
+  end;
+
+  procedure TestPathPosDefault(const C: Char; const S: String;
+    const ExpectedResult: Integer);
+  begin
+    if PathPos(C, S) <> ExpectedResult then
       raise Exception.Create('PathPos test failed');
   end;
 
@@ -336,6 +384,7 @@ begin
   TestPartLengths('c:\\', 2, 3, 3, 4);
   TestPartLengths('c:\\\', 2, 3, 3, 5);
   TestPartLengths('c:\a', 2, 3, 3, 3);
+  TestPartLengths('c:/a', 2, 3, 3, 3);
   TestPartLengths('c:\a\', 2, 3, 4, 5);
   TestPartLengths('c:\a\\', 2, 3, 4, 6);
   TestPartLengths('c:\a\\\', 2, 3, 4, 7);
@@ -377,6 +426,7 @@ begin
   TestRemoveBackslash('\', '');
   TestRemoveBackslash('\\', '');
   TestRemoveBackslash('\\\', '');
+  TestRemoveBackslash('a/', 'a');
   TestRemoveBackslash('c:', 'c:');
   TestRemoveBackslash('c:\', 'c:');
   TestRemoveBackslash('c:\\', 'c:');
@@ -395,6 +445,7 @@ begin
   TestRemoveBackslashUnlessRoot('c:\a', 'c:\a');
   TestRemoveBackslashUnlessRoot('c:\a\', 'c:\a');
   TestRemoveBackslashUnlessRoot('c:\a\\', 'c:\a');
+  TestRemoveBackslashUnlessRoot('c:\a/', 'c:\a');
   TestRemoveBackslashUnlessRoot('\\a\b', '\\a\b');
   TestRemoveBackslashUnlessRoot('\\a\b\', '\\a\b');
   TestRemoveBackslashUnlessRoot('\\a\b\\', '\\a\b');
@@ -408,6 +459,10 @@ begin
   TestPathChangeExt('c:\x.y\a', '.txt', 'c:\x.y\a.txt');
   TestPathChangeExt('\\x.y\a', '.txt', '\\x.y\a.txt'); {*}  { ditto above }
   TestPathChangeExt('\\x.y\a\', '.txt', '\\x.y\a\.txt'); {*}
+  TestPathChangeExt('a', '.txt', 'a.txt');
+  TestPathChangeExt('a.tar', '.txt', 'a.txt');
+  TestPathChangeExt('a.tar', 'txt', 'atxt');
+  TestPathChangeExt('a.txt', '', 'a');
 
   TestPathExtractExt('c:', '');
   TestPathExtractExt('c:\', '');
@@ -425,6 +480,7 @@ begin
   TestPathCombine('a', 'x', 'a\x');
   TestPathCombine('a\', 'x', 'a\x');
   TestPathCombine('a\\', 'x', 'a\\x');
+  TestPathCombine('a/', 'x', 'a/x');
   TestPathCombine('c:', 'x', 'c:x');
   TestPathCombine('c:a', 'x', 'c:a\x');
   TestPathCombine('c:\', 'x', 'c:\x');
@@ -442,10 +498,12 @@ begin
   TestPathCombine('c:\', 'ee:x', 'c:\ee:x'); {**}
 
   TestPathStartsWith('', '', True);
+  TestPathStartsWith('', 'abc', False);
   TestPathStartsWith('TestingAbc', '', True);
   TestPathStartsWith('C:', 'c:\', False);
   TestPathStartsWith('C:\', 'c:\', True);
   TestPathStartsWith('C:\test', 'c:\', True);
+  TestPathStartsWithCaseSensitive('C:\test', 'c:\', False);
 
   TestPathEndsWith(False, '', '', True);
   TestPathEndsWith(True, '', '', True);
@@ -460,6 +518,7 @@ begin
   TestPathHasSubstringAt('abc', 'a', -1, False);
   TestPathHasSubstringAt('abc', '', 3, True);
   TestPathHasSubstringAt('abc', 'a', 99, False);
+  TestPathHasSubstringAtCaseSensitive('Hello', 'HELLO', 0, False);
 
   TestPathExpand('', '', False);
   TestPathExpand(' ', '', False);
@@ -494,12 +553,14 @@ begin
   TestPathNormalizeSlashes('a//b', 'a\b');
   TestPathNormalizeSlashes('///', '\\\'); { 3+ leading slash quirk preserved }
   TestPathNormalizeSlashes('', '');
+  TestPathNormalizeSlashes('/', '\');
 
   TestPathStrCompare('Test', 'test', True, 0);
   TestPathStrCompare('Test', 'test', False, -1);
   TestPathStrCompare('Test', 'Te', False, 1);
   TestPathStrCompare('Test', 'Tex', False, -1);
   TestPathStrCompare('Hello'+#0+'World', 'Hello', False, 0, True);
+  TestPathStrCompare('', '', True, 0);
 
   TestPathStrFind('abcABC', 'ABC', True, 0);
   TestPathStrFind('abcABC', 'ABC', False, 3);
@@ -508,6 +569,13 @@ begin
   TestPathStrFind('abcABC', 'xyz', True, -1);
   TestPathStrFind('abc'+#0+'ABC', 'ABC', False, -1, True);
   TestPathStrFind('abc'+#0+'ABC', 'ABC', False, 4);
+  TestPathStrFind('abc', '', True, 0);
+
+  TestPathStrNextChar('A', 0, 1);
+  TestPathStrNextChar('A', 1, 1);
+
+  TestPathStrScan('abc', 'b', 1);
+  TestPathStrScan('abc', 'z', -1);
 
   TestAddBackslash('', '');
   TestAddBackslash('a', 'a\');
@@ -562,6 +630,7 @@ begin
 
   TestPathHasInvalidCharacters('C:\dir\file', False, True);
   TestPathHasInvalidCharacters('a'+#1+'b', False, True);
+  TestPathHasInvalidCharacters('a'+#0+'b', False, True);
   TestPathHasInvalidCharacters('a/b', False, True);
   TestPathHasInvalidCharacters('a*b', False, True);
   TestPathHasInvalidCharacters('a?b', False, True);
@@ -625,14 +694,18 @@ begin
   TestPathComponentIsReservedName('sub\NUL', False);
 
   TestValidateAndCombinePath('c:\dest\', 'sub\file.txt', 'c:\dest\sub\file.txt', True); { success }
+  TestValidateAndCombinePath('c:\dest\', 'file.txt', 'c:\dest\file.txt', True);         { simple filename }
+  TestValidateAndCombinePath('c:\dest\', 'my file.txt', 'c:\dest\my file.txt', True);   { spaces in name }
   TestValidateAndCombinePath('c:\dest\', '', '', False);                                { empty }
   TestValidateAndCombinePath('c:\dest\', 'c:\file', '', False);                         { rooted }
   TestValidateAndCombinePath('c:\dest\', 'a/b', '', False);                             { not normalized }
   TestValidateAndCombinePath('c:\dest\', 'sub\', '', False);                            { trailing slash }
   TestValidateAndCombinePath('c:\dest\', '..\x', '', False);                            { invalid chars (incl. ..) }
   TestValidateAndCombinePath('c:\dest\', 'sub\NUL', '', False);                         { reserved name }
+  TestValidateAndCombinePath('c:\dest\', 'NUL', '', False);                             { reserved name directly }
 
   TestPathConvertNormalToSuper('C:\dir\file', '\\?\C:\dir\file', True);
+  TestPathConvertNormalToSuperStr('C:\dir\file', '\\?\C:\dir\file');
   TestPathConvertNormalToSuper('C:', '\\?\' + PathExpand('C:'), True);
   TestPathConvertNormalToSuper('\\server\share\x', '\\?\UNC\server\share\x', True);
   TestPathConvertNormalToSuper('\\.\C:\x', '\\?\C:\x', True);
@@ -648,6 +721,9 @@ begin
   TestPathConvertSuperToNormal('C:\x', 'C:\x');
   TestPathConvertSuperToNormal('\\s\sh', '\\s\sh');
   TestPathConvertSuperToNormal('', '');
+  TestPathConvertSuperToNormal('\\?\C:xxx', '\\?\C:xxx');   { can't convert }
+  TestPathConvertSuperToNormal('\\?\', '\\?\');             { short prefix }
+  TestPathConvertSuperToNormal('\\?\\:', '\\?\\:');         { slash as drive letter }
 
   TestPathLastDelimiter('\/', 'a\b/c', 4);
   TestPathLastDelimiter('\/', 'abc', 0);
@@ -665,10 +741,12 @@ begin
   TestPathLowercase('', '');
 
   TestPathPos('b', 'abc', 1, 2);
+  TestPathPosDefault('b', 'abc', 2);
   TestPathPos('b', 'bcb', 2, 3);
   TestPathPos('z', 'abc', 1, 0);
   TestPathPos('a', '', 1, 0);
   { Bad offset }
+  TestPathPos('a', 'abc', -1, 0);
   TestPathPos('a', 'abc', 0, 0);
   TestPathPos('a', 'abc', 99, 0);
 
