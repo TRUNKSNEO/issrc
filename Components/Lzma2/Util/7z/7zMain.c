@@ -11,6 +11,7 @@
    -Add optional output of SzArEx_Extract's output buffer sizes
    -Add support for overwriting read-only files by removing the read-only attribute instead of always deleting the file
    -Add option to disable terminal checking
+   -Add option to disable path normalization to allow custom implementation by host
    Otherwise unchanged */
 
 #include "Precomp.h"
@@ -248,6 +249,21 @@ static SRes Utf16_To_Char(CBuf *buf, const UInt16 *s
 }
 
 
+#ifdef NO_NORMALIZE_PATH_FOR_FS
+
+#define NORMALIZED_CHAR_PATH_SEPARATOR '/'
+
+static Z7_FORCE_INLINE
+void NormalizePath_for_FS(UInt16 *dest, UInt16 *s, BoolInt isDir)
+{
+  (void)isDir;
+  while ((*dest++ = *s++) != 0) {}
+}
+
+#else
+
+#define NORMALIZED_CHAR_PATH_SEPARATOR CHAR_PATH_SEPARATOR
+
 #ifdef _WIN32
 
 static Z7_FORCE_INLINE unsigned MyCharLower_Ascii(unsigned c)
@@ -445,6 +461,7 @@ void NormalizePath_for_FS(UInt16 *dest, UInt16 *s, BoolInt isDir)
   NormalizesPathParts_and_Dots(dest, s , isDir);
 }
 
+#endif
 
 
 #ifdef _WIN32
@@ -1133,9 +1150,9 @@ int Z7_CDECL mainW(int numargs, WCHAR *args[])
           // memset(temp2, 0, (tempSize) * sizeof(temp[0])); // for debug
           NormalizePath_for_FS(temp2, temp, isDir);
           // PrintLF(); PrintPath(temp2, temp, isDir, isTerminalMode); // for debuf
-          
+
           for (j = 0; name[j] != 0; j++)
-            if (name[j] == CHAR_PATH_SEPARATOR)
+            if (name[j] == NORMALIZED_CHAR_PATH_SEPARATOR)
             {
               if (fullPaths)
               {
