@@ -1721,11 +1721,12 @@ ExternalSize: 1_048_576; Flags: external
 
 <flaglist>
 <flag name="32bit">
-<p>Causes the <tt>{sys}</tt> constant to map to the 32-bit System directory when used in the <tt>Source</tt> and <tt>DestDir</tt> parameters, the <tt>regserver</tt> and <tt>regtypelib</tt> flags to treat the file as 32-bit, and the <tt>sharedfile</tt> flag to update the 32-bit SharedDLLs registry key. This is the default behavior in <link topic="32vs64bitinstalls">32-bit install mode</link>.</p>
+<p>Sets the <link topic="entrybitness">entry's bitness</link> to 32-bit, overriding the default bitness.</p>
 <p>Combining <tt>32bit</tt> and <tt>regtypelib</tt> requires a <link topic="64bit">32-bit installer</link>.</p>
 </flag>
 <flag name="64bit">
-<p>Causes the <tt>{sys}</tt> constant to map to the 64-bit System directory when used in the <tt>Source</tt> and <tt>DestDir</tt> parameters, the <tt>regserver</tt> and <tt>regtypelib</tt> flags to treat the file as 64-bit, and the <tt>sharedfile</tt> flag to update the 64-bit SharedDLLs registry key. This is the default behavior in <link topic="32vs64bitinstalls">64-bit install mode</link>.</p>
+<p>Sets the <link topic="entrybitness">entry's bitness</link> to 64-bit, overriding the default bitness.</p>
+<p>This flag can only be used when Setup is running on 64-bit Windows, otherwise an error will occur. On an installation supporting both 32- and 64-bit architectures, it is possible to avoid the error by adding a <tt>Check: IsWin64</tt> parameter, which will cause the entry to be silently skipped when running on 32-bit Windows.</p>
 <p>Combining <tt>64bit</tt> and <tt>regtypelib</tt> requires a <link topic="64bit">64-bit installer</link>.</p>
 </flag>
 <flag name="allowunsafefiles">
@@ -1843,12 +1844,12 @@ Instructs Setup to proceed to comparing time stamps (last write/modified time) i
 </flag>
 <flag name="regserver">
 <p>Register the DLL/OCX file. With this flag set, Setup will call the DllRegisterServer function exported by the DLL/OCX file, and the uninstaller will call DllUnregisterServer prior to removing the file. When used in combination with <tt>sharedfile</tt>, the DLL/OCX file will only be unregistered when the reference count reaches zero.</p>
-<p>In <link topic="32vs64bitinstalls">64-bit install mode</link>, the file is assumed to be a 64-bit image and will be registered inside a 64-bit process. You can override this by specifying the <tt>32bit</tt> flag.</p>
+<p>The <link topic="entrybitness">entry's bitness</link> determines whether the 32-bit or 64-bit <tt>regsvr32.exe</tt> is used to register/unregister the file. The default bitness can be overridden with the <tt>32bit</tt> and <tt>64bit</tt> flags.</p>
 <p>See the <i>Remarks</i> at the bottom of this topic for more information.</p>
 </flag>
 <flag name="regtypelib">
 <p>Register the type library (.tlb). The uninstaller will unregister the type library (unless the flag <tt>uninsneveruninstall</tt> is specified). As with the <tt>regserver</tt> flag, when used in combination with <tt>sharedfile</tt>, the file will only be unregistered by the uninstaller when the reference count reaches zero.</p>
-<p>Type libraries can be registered in either the 32-bit or 64-bit registry view, which are used by 32-bit and 64-bit applications respectively. By default, the <link topic="32vs64bitinstalls">install mode</link> (32-bit or 64-bit) determines which registry view is used, but this can be overridden with the <tt>32bit</tt> and <tt>64bit</tt> flags.</p>
+<p>Type libraries can be registered in either the 32-bit or 64-bit registry view, which are used by 32-bit and 64-bit applications respectively. The <link topic="entrybitness">entry's bitness</link> determines which registry view is used. The default bitness can be overridden with the <tt>32bit</tt> and <tt>64bit</tt> flags.</p>
 <p>In Inno Setup &ge;7.0, <link topic="64bit">32-bit Setup/Uninstall</link> can only register/unregister type libraries in the 32-bit registry view, and <link topic="64bit">64-bit Setup/Uninstall</link> can only register/unregister type libraries in the 64-bit registry view. In previous versions, 32-bit installers could register type libraries in the 64-bit registry view, but that now requires a 64-bit installer.</p>
 <p>The compiler tries to detect and report bitness mismatches. If a mismatch isn't caught by the compile-time check (which is possible with some custom <sd>ArchitecturesInstallIn64BitMode</sd> settings), Setup will display an error when attempting to register the type library. When the <tt>32bit</tt> or <tt>64bit</tt> flag is specified, any mismatch will always be caught at compile time.</p>
 <p>See the <i>Remarks</i> at the bottom of this topic for more information.</p>
@@ -1870,6 +1871,7 @@ Instructs Setup to proceed to comparing time stamps (last write/modified time) i
 <p>Specifies that the file is shared among multiple applications, and should only be removed at uninstall time if no other applications are using it. Most files installed to the Windows System directory should use this flag, including .OCX, .BPL, and .DPL files.</p>
 <p>Windows' standard shared file reference-counting mechanism (located in the registry under HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\SharedDLLs) is used to keep track of how many applications depend on the file. Each time the file is installed, the reference count for the file is incremented. (This happens regardless of whether the installer actually replaces the file on disk.) When an application using the file is uninstalled, the reference count is decremented. If the count reaches zero, the file is deleted (with the user's confirmation, unless the <tt>uninsnosharedfileprompt</tt> flag is also specified).</p>
 <p>If Setup is run more than once, the reference count for the file will be incremented more than once. The uninstaller will decrement the reference count the same number of times, however, so no references are leaked (provided the <link topic="setup_uninstalllogmode">UninstallLogMode</link> [Setup] section directive isn't changed from its default setting of <tt>append</tt>).</p>
+<p>On 64-bit Windows, there are separate <tt>SharedDLLs</tt> registry keys for 32-bit and 64-bit applications. The <link topic="entrybitness">entry's bitness</link> determines whether the 32-bit or 64-bit <tt>SharedDLLs</tt> key is updated. The default bitness can be overridden with the <tt>32bit</tt> and <tt>64bit</tt> flags.</p>
 <p>When this flag is used, do not specify <tt>{syswow64}</tt> in the <tt>DestDir</tt> parameter; use <tt>{sys}</tt> instead. Even though <tt>{sys}</tt> and <tt>{syswow64}</tt> map to the same underlying directory in <link topic="32vs64bitinstalls">32-bit install mode</link>, the path name must exactly match what every other existing installer is using; otherwise, a second reference count for the file would be created, which could result in the file being removed prematurely. If you need to install a shared file to the 32-bit System directory in <link topic="32vs64bitinstalls">64-bit install mode</link>, specify <tt>{sys}</tt> in the <tt>DestDir</tt> parameter and additionally include the <tt>32bit</tt> flag.</p>
 </flag>
 <flag name="sign">
@@ -2536,9 +2538,14 @@ Root: HKLM; Subkey: "Software\My Company\My Program\Settings"; ValueType: string
 </indent>
 <p><tt>HKCU</tt> and <tt>HKA</tt> should only be used for settings which are compatible with roaming profiles.</p>
 <p>Using <tt>HKCR</tt> is not recommended, use <tt>HKA</tt> with the <tt>Subkey</tt> parameter set to "Software\Classes" instead.</p>
-<p>The values (including <tt>HKA</tt>) may have a suffix of <tt>32</tt> or <tt>64</tt>. Root key values with a suffix of <tt>32</tt> (for example, <tt>HKLM32</tt>) map to the 32-bit view of the registry; root key values with a suffix of <tt>64</tt> (for example, <tt>HKLM64</tt>) map to the 64-bit view of the registry.</p>
-<p>Root key values with a suffix of <tt>64</tt> can only be used when Setup is running on 64-bit Windows, otherwise an error will occur. On an installation supporting both 32- and 64-bit architectures, it is possible to avoid the error by adding a <tt>Check: IsWin64</tt> parameter, which will cause the entry to be silently skipped when running on 32-bit Windows.</p>
-<p>A root key value without a suffix (for example, <tt>HKLM</tt>) is equivalent to the value with a suffix of <tt>32</tt> (for example, <tt>HKLM32</tt>) unless the install is running in <link topic="32vs64bitinstalls">64-bit install mode</link>, in which case it is equivalent to the value with a suffix of <tt>64</tt> (for example, <tt>HKLM64</tt>).</p>
+<p>By default, keys are created/opened in the 32-bit view of the registry when running in <link topic="32vs64bitinstalls">32-bit install mode</link>, and in the 64-bit view of the registry when running in <link topic="32vs64bitinstalls">64-bit install mode</link>. To specify a different view, root key values (including <tt>HKA</tt>) may include a suffix of <tt>32</tt> or <tt>64</tt>:</p>
+<ul>
+<li>Root key values with a suffix of <tt>32</tt> (for example, <tt>HKLM32</tt>) map to the 32-bit view of the registry.</li>
+<li>
+<p>Root key values with a suffix of <tt>64</tt> (for example, <tt>HKLM64</tt>) map to the 64-bit view of the registry.</p>
+<p>The <tt>64</tt> suffix can only be used when Setup is running on 64-bit Windows, otherwise an error will occur. On an installation supporting both 32- and 64-bit architectures, it is possible to avoid the error by adding a <tt>Check: IsWin64</tt> parameter, which will cause the entry to be silently skipped when running on 32-bit Windows.</p>
+</li>
+</ul>
 <example>
 <pre>Root: HKLM</pre>
 </example>
@@ -2760,11 +2767,11 @@ Filename: "{app}\MyProg.exe"; Description: "Launch application"; Flags: postinst
 
 <flaglist>
 <flag name="32bit">
-<p>Causes the <tt>{sys}</tt> constant to map to the 32-bit System directory when used in the <tt>Filename</tt> and <tt>WorkingDir</tt> parameters. This is the default behavior in <link topic="32vs64bitinstalls">32-bit install mode</link>.</p>
+<p>Sets the <link topic="entrybitness">entry's bitness</link> to 32-bit, overriding the default bitness.</p>
 <p>This flag cannot be combined with the <tt>shellexec</tt> flag.</p>
 </flag>
 <flag name="64bit">
-<p>Causes the <tt>{sys}</tt> constant to map to the 64-bit System directory when used in the <tt>Filename</tt> and <tt>WorkingDir</tt> parameters. This is the default behavior in <link topic="32vs64bitinstalls">64-bit install mode</link> install.</p>
+<p>Sets the <link topic="entrybitness">entry's bitness</link> to 64-bit, overriding the default bitness.</p>
 <p>This flag can only be used when Setup is running on 64-bit Windows, otherwise an error will occur. On an installation supporting both 32- and 64-bit architectures, it is possible to avoid the error by adding a <tt>Check: IsWin64</tt> parameter, which will cause the entry to be silently skipped when running on 32-bit Windows.</p>
 <p>This flag cannot be combined with the <tt>shellexec</tt> flag.</p>
 </flag>
@@ -3419,6 +3426,17 @@ Filename: "{win}\MyProg.ini"; Section: "InstallSettings"; Key: "InstallPath"; St
 <body>
 <p>On 64-bit Windows, there are two "System" directories: one containing 64-bit DLLs/EXEs, called <tt>System32</tt> on disk, and one containing 32-bit DLLs/EXEs, called <tt>SysWOW64</tt> on disk.</p>
 <p><i>System path redirection</i> is applied to the values of certain parameters that take paths &mdash; see <link topic="entrybitness">Entry Bitness</link> for the full list. Paths starting with <tt>{sys}</tt> (or other value expanding to <tt><i>x</i>:\Windows\System32</tt>) are automatically rewritten if needed so that on 64-bit entries, it is the 64-bit System directory that is accessed, and on 32-bit entries, it is the 32-bit System directory that is accessed.</p>
+<p>For example, on 64-bit Windows, in this case:</p>
+<precode>
+[Files]
+Source: "MyLibrary.dll"; DestDir: "{sys}"; Flags: 32bit
+</precode>
+<p>the file is actually installed to <tt>SysWOW64</tt> (32-bit), not <tt>System32</tt> (64-bit). But in this case:</p>
+<precode>
+[Files]
+Source: "MyLibrary.dll"; DestDir: "{sys}"; Flags: 64bit
+</precode>
+<p>the file is installed to <tt>System32</tt> (64-bit). Behind the scenes, however, <link topic="64bit">32-bit installers</link> access the directory under the alias <tt>Sysnative</tt> (see table below).</p>
 <p>No rewriting occurs on systems running 32-bit Windows, as <tt>System32</tt> is the only System directory. <tt>SysWOW64</tt> doesn't exist, and the <tt>Sysnative</tt> alias isn't supported.</p>
 <p>Paths are rewritten according to the following rules:</p>
 <indent>
