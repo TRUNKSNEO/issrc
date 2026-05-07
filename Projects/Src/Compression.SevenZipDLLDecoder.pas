@@ -946,6 +946,7 @@ begin
   Handlers.Add('.gz', CLSID_HandlerGzip);
   Handlers.Add('.bz2', CLSID_HandlerBZip2);
   Handlers.Add('.xz', CLSID_HandlerXz);
+  Handlers.Add('.zst', CLSID_HandlerZstd);
   Handlers.Add('.tar', CLSID_HandlerTar);
   Handlers.Add('.rar', CLSID_HandlerRar);
   Handlers.Add('.iso', CLSID_HandlerIso);
