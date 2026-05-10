@@ -967,6 +967,24 @@ function ValidateAndCombinePath(const ADestDir, AFilename: String;
   and AFilename in AResultingPath.
   ADestDir is assumed to be normalized already and have a trailing backslash.
   AFilename may be a file or directory name. }
+
+  function IsAnyComponentReservedName(S: String): Boolean;
+  begin
+    { GetFullPathName doesn't treat 'NUL\file.txt' as a device name, but the
+      caller might access 'NUL' if it tries to create parent directories. So
+      check all components, not just the last one. }
+    while True do begin
+      const LastComponent = PathExtractName(S);
+      if PathComponentIsReservedName(LastComponent) then
+        Exit(True);
+      const ParentDir = PathExtractDir(S);
+      if (ParentDir = '') or (ParentDir = S) then
+        Break;
+      S := ParentDir;
+    end;
+    Result := False;
+  end;
+
 begin
   { - Don't allow empty names
     - Don't allow forward slashes or repeated slashes
@@ -980,7 +998,7 @@ begin
      not PathIsRooted(AFilename) and
      not PathCharIsSlash(AFilename[High(AFilename)]) and
      not PathHasInvalidCharacters(AFilename, False) and
-     not PathComponentIsReservedName(PathExtractName(AFilename)) then begin
+     not IsAnyComponentReservedName(AFilename) then begin
     { Our validity checks passed. Now pass the combined path to PathExpand
       (GetFullPathName) to see if it thinks the path needs normalization.
       If the returned path isn't exactly what was passed in, then consider

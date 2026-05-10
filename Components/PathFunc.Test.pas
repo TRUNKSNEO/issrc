@@ -296,7 +296,7 @@ procedure PathFuncRunTests;
   procedure TestValidateAndCombinePath(const ADestDir, AFilename, ExpectedResultingPath: String;
     const ExpectedResult: Boolean);
   begin
-    var ResultingPath: String;
+    var ResultingPath := 'unchanged';
     if ValidateAndCombinePath(ADestDir, AFilename, ResultingPath) <> ExpectedResult then
       raise Exception.Create('ValidateAndCombinePath test failed');
     if ExpectedResult then begin
@@ -774,10 +774,10 @@ begin
   TestValidateAndCombinePath('c:\dest\', '..\x', '', False);                            { invalid chars (incl. ..) }
   TestValidateAndCombinePath('c:\dest\', 'file.', '', False);                           { trailing dot }
   TestValidateAndCombinePath('c:\dest\', 'file:stream', '', False);                     { stream name }
-  TestValidateAndCombinePath('c:\dest\', 'sub\NUL', '', False);                         { reserved name }
-  TestValidateAndCombinePath('c:\dest\', 'NUL', '', False);                             { reserved name directly }
-  { Next test fails and is disabled }
-  {TestValidateAndCombinePath('c:\dest\', 'NUL\file.txt', '', False);}                  { reserved name component }
+  TestValidateAndCombinePath('c:\dest\', 'NUL', '', False);                             { reserved name }
+  TestValidateAndCombinePath('c:\dest\', 'NUL\file.txt', '', False);                    { reserved name front }
+  TestValidateAndCombinePath('c:\dest\', 'sub\NUL', '', False);                         { reserved name end }
+  TestValidateAndCombinePath('c:\dest\', 'sub\NUL\file.txt', '', False);                { reserved name middle }
 
   TestPathConvertNormalToSuperStr('', '');
   TestPathConvertNormalToSuper('C:\dir\file', '\\?\C:\dir\file', True);
