@@ -90,6 +90,7 @@
     <contentstopic title="Uninstaller Exit Codes" topic="uninstexitcodes" />
     <contentstopic title="Compiler IDE Keyboard And Mouse Commands" topic="compformshortcuts" />
     <contentstopic title="Compiler IDE Regular Expressions" topic="compformregex" />
+    <contentstopic title="Security Enhancements" topic="securityenhancements" />
     <contentstopic title=".issig Signatures: Introduction" topic="issig" />
     <contentstopic title="Inno Setup Signature Tool" topic="issigtool" />
     <contentstopic title="Miscellaneous Notes" topic="technotes" />
@@ -3900,6 +3901,216 @@ Source: "MyLibrary.dll"; DestDir: "{sys}"; Flags: 64bit
 <p>As shown in the example above, wizard names and filenames that include spaces must be enclosed in quotes.</p>
 
 <p>Running the wizard from the command line does not suppress any error messages. The Setup Script Wizard will return an exit code of 0 if there was no error and additionally it will save the generated script file to the specified filename, 1 if the command line parameters were invalid, or 2 if the generated script file could not be saved. If the user cancelled the Setup Script Wizard, an exit code of 0 is returned and no script file is saved.</p>
+</li>
+
+</ul>
+
+</body>
+</topic>
+
+
+
+<topic name="securityenhancements" title="Security Enhancements">
+<keyword value="Security" />
+<keyword value="DLL hijacking" />
+<keyword value="DLL sideloading" />
+<keyword value="RedirectionGuard" />
+<keyword value="DEP" />
+<keyword value="ASLR" />
+<keyword value="encryption" />
+<keyword value="temporary directory" />
+<body>
+
+<p>Inno Setup incorporates a wide range of security measures to protect the integrity of the build process, the installer, and the user's system. This topic provides an overview of these measures.</p>
+
+<heading>DLL Hijacking Protection</heading>
+
+<p>DLL hijacking (also known as DLL sideloading) is an attack where a malicious DLL is placed in a location where it will be loaded instead of the legitimate system DLL. Inno Setup uses multiple layers of defense against this:</p>
+
+<ul>
+
+<li>
+<p>All Inno Setup executables restrict the implicit DLL search order so that DLLs are only loaded from the Windows system directory, not from the application directory or the current directory. This is the primary defense against DLL hijacking.</p>
+</li>
+
+<li>
+<p>The Setup and Uninstall manifests contain entries that instruct the Windows loader to load specific known sideloading targets (such as <tt>version.dll</tt> and <tt>winhttp.dll</tt>) directly from the system directory, regardless of what might be present in the application directory.</p>
+</li>
+
+<li>
+<p>At compile time, the compiler patches the setup loader manifest to prevent <tt>comctl32.dll</tt> sideloading.</p>
+</li>
+
+<li>
+<p>Where Inno Setup loads Windows DLLs explicitly, it builds an absolute path under the system directory before loading, avoiding any directory search behavior entirely.</p>
+</li>
+
+<li>
+<p>The default <link topic="setup_outputbasefilename">OutputBaseFilename</link> is <tt>mysetup</tt>, not <tt>setup</tt>. All files named <tt>setup.exe</tt> are shimmed by Windows' Application Compatibility layer to load additional DLLs, which creates a DLL hijacking vector.</p>
+</li>
+
+</ul>
+
+<heading>Process Memory Protections</heading>
+
+<p>Setup and Uninstall have Data Execution Prevention (DEP) and Address Space Layout Randomization (ASLR) enabled. DEP prevents code from executing in memory regions marked as data, and ASLR randomizes the memory layout of the process, making exploitation harder. For <link topic="64bit">64-bit installers</link>, high-entropy ASLR is additionally enabled.</p>
+
+<p>These are controlled by the <link topic="setup_depcompatible">DEPCompatible</link> and <link topic="setup_aslrcompatible">ASLRCompatible</link> directives (both default to <tt>yes</tt>).</p>
+
+<heading>Symlink and Junction Attack Protection (RedirectionGuard)</heading>
+
+<p>Setup and Uninstall enable the Windows RedirectionGuard mitigation by default, which blocks traversal of NTFS junctions and symbolic links created by unprivileged users. This prevents attackers from tricking an elevated installer into creating or modifying files in unintended locations.</p>
+
+<p>This is controlled by the <link topic="setup_redirectionguard">RedirectionGuard</link> directive (default: <tt>yes</tt>). When Setup installs with RedirectionGuard enabled, Uninstall also re-enables it. The setup loader resolves SUBST drives and symbolic links before passing paths to Setup, ensuring elevation and RedirectionGuard work correctly together.</p>
+
+<heading>Temporary Directory Security</heading>
+
+<p>Setup and Uninstall create a private temporary directory for their own use, rather than using the system temporary directory directly. This means they are not affected by preexisting files that might be placed there by an attacker. Several additional measures protect these private directories:</p>
+
+<ul>
+
+<li>
+<p>Temporary directories are created with restrictive access control lists. When running elevated or under <tt>C:\Windows\Temp</tt>, the current user is limited to read and execute access only, while Administrators and SYSTEM have full access. This prevents unprivileged attackers from reading or modifying the temporary directory contents.</p>
+</li>
+
+<li>
+<p>Temporary directory and file names are generated using a cryptographically secure random number generator, making it infeasible for an attacker to predict or race to create the directory first.</p>
+</li>
+
+<li>
+<p>When running as the SYSTEM account, Inno Setup uses a system-only temporary directory (<tt>C:\Windows\SystemTemp</tt>) when available, rather than the world-writable <tt>C:\Windows\Temp</tt>.</p>
+</li>
+
+</ul>
+
+<heading>Path Security</heading>
+
+<p>All path-related operations throughout Inno Setup use a dedicated path handling library with comprehensive validation. This library handles drive letters, UNC paths, extended-length paths, reserved device names, invalid characters, trailing dots and spaces, NTFS alternate data streams, and other edge cases that could lead to security issues if not handled correctly.</p>
+
+<ul>
+
+<li>
+<p>Paths extracted from archives are validated to prevent directory traversal attacks. Entries with absolute paths, <tt>..</tt> components, reserved device names (such as CON, PRN, NUL), or invalid characters are rejected.</p>
+</li>
+
+<li>
+<p>Setup and Uninstall avoid leaving child processes with an unsafe inherited current directory. When no working directory is specified, they fall back to the executable directory or the system directory rather than using their own current directory. Setup applies the same logic to shortcuts it creates.</p>
+</li>
+
+<li>
+<p>ISPP <tt>#include</tt> does not search the current directory, and paths beginning with <tt>.\</tt> or <tt>..\</tt> are resolved relative to the including file. Most other ISPP functions that take filenames resolve relative paths against the script's source directory. This prevents accidentally including files from unexpected locations.</p>
+</li>
+
+</ul>
+
+<heading>Privilege and Elevation Handling</heading>
+
+<p>All Inno Setup executables request no special privileges in their manifest (<tt>asInvoker</tt>). When administrative privileges are needed, Setup respawns itself with elevation. This allows Setup to run unprivileged when possible, for example for per-user installations with <link topic="setup_privilegesrequired">PrivilegesRequired</link> set to <tt>lowest</tt>.</p>
+
+<p>The <tt>HKA</tt> registry root and "auto" constants (such as <tt>{autopf}</tt> and <tt>{autoappdata}</tt>) automatically map to machine-wide locations in administrative install mode and per-user locations in non-administrative install mode, reducing privilege-mode mistakes in scripts that support both.</p>
+
+<p><link topic="runsection">[Run]</link> entries support the <tt>runascurrentuser</tt> and <tt>runasoriginaluser</tt> flags for controlling which credentials child processes inherit. <link topic="runsection">[UninstallRun]</link> entries support <tt>runascurrentuser</tt>; <tt>runasoriginaluser</tt> is valid only in <link topic="runsection">[Run]</link>.</p>
+
+<p>For administrative installs, the compiler warns if the script writes to per-user areas, because user-level files and settings should be handled by the application rather than an elevated installer. This is controlled by <link topic="setup_useduserareaswarning">UsedUserAreasWarning</link>.</p>
+
+<heading>File Integrity and Signature Verification</heading>
+
+<p>Inno Setup includes an integrated <link topic="issig">.issig signature system</link> based on ECDSA-P256 and SHA-256 for verifying the integrity and authenticity of files. This can be used to verify files at compile time (via the <tt>issigverify</tt> flag on <link topic="filessection">[Files]</link> section entries), during installation of external files, and at runtime from Pascal Script. The <tt>ISSigAllowedKeys</tt> parameter can restrict which <link topic="issigkeyssection">[ISSigKeys]</link> entries may verify a given file, so that verification is limited to the intended trust anchors instead of accepting any configured key.</p>
+
+<p>SHA-256 is used for all security-relevant hashing throughout Inno Setup, including file checksums and download verification. The <tt>Hash</tt> parameter on <link topic="filessection">[Files]</link> section entries allows specifying a required SHA-256 hash for external files, which is verified during installation.</p>
+
+<p>The <tt>signcheck</tt> flag on <link topic="filessection">[Files]</link> section entries instructs the compiler to verify that source files have an Authenticode digital signature before storing them.</p>
+
+<heading>Precompiled File Trust Verification</heading>
+
+<p>The Compiler IDE and the command line compiler verify the authenticity of all bundled DLLs they load. This verification uses the <link topic="issig">.issig signature system</link> to check the file's ECDSA-P256 signature and SHA-256 hash.</p>
+
+<p>The compiler also verifies precompiled binaries (the setup loader, Setup, decompression DLLs) before using them to build the installer. The file handle is kept open between verification and use so that nothing can replace the file in between. This can be controlled using the <link topic="setup_disableprecompiledfileverifications">DisablePrecompiledFileVerifications</link> directive.</p>
+
+<heading>Encryption</heading>
+
+<p>When <link topic="setup_encryption">Encryption</link> is enabled, Inno Setup uses 256-bit XChaCha20 for symmetric encryption and <link topic="setup_encryptionkeyderivation">PBKDF2-HMAC-SHA256</link> for key derivation. Encryption salts and nonces are generated using a cryptographically secure random number generator. Sensitive cryptographic key material is zeroed from memory after use.</p>
+
+<heading>Authenticode (Code Signing) Support</heading>
+
+<p>The compiler can invoke external signing tools via the <link topic="setup_signtool">SignTool</link> directive to digitally sign the installer. The <link topic="filessection">[Files]</link> section flags <tt>sign</tt> and <tt>signonce</tt> instruct the compiler to Authenticode-sign source files before storing them.</p>
+
+<p>The compiler verifies that the signing tool command contains a file placeholder, and fails if the signing tool returns an error. For signed uninstallers, it also checks that a signature was added and that removing the signature leaves the uninstaller contents unchanged.</p>
+
+<p>The <link topic="setup_signeduninstaller">SignedUninstaller</link> directive ensures the uninstaller also carries a digital signature.</p>
+
+<heading>Download Security</heading>
+
+<p>The built-in download support enforces server certificate validation: expired and self-signed certificates are rejected. TLS 1.0 and TLS 1.1 are disabled; only TLS 1.2 and TLS 1.3 are used.</p>
+
+<p>Downloaded files can be verified using a required SHA-256 hash or an <link topic="issig">.issig signature</link>. Credentials in download URLs are redacted in log output.</p>
+
+<heading>Other Measures</heading>
+
+<ul>
+
+<li>
+<p>The compiler rejects preprocessor directives in <tt>.isl</tt> language files, preventing code injection via malicious translation files.</p>
+</li>
+
+<li>
+<p>All security-sensitive random number generation uses a cryptographically secure random number generator, including temporary directory names, encryption salts and nonces, and the Pascal Script <tt>Random</tt> function.</p>
+</li>
+
+<li>
+<p>The compiler blocks known dangerous <link topic="filessection">[Files]</link> section entries (such as deploying system DLLs to the system directory) unless explicitly allowed.</p>
+</li>
+
+<li>
+<p>The compiler prohibits <link topic="registrysection">[Registry]</link> section entries from deleting the system environment registry key.</p>
+</li>
+
+<li>
+<p><link topic="runsection">[Run]</link> and <link topic="runsection">[UninstallRun]</link> entries support the <tt>dontlogparameters</tt> flag to prevent sensitive command line parameters from being included in the log file.</p>
+</li>
+
+<li>
+<p>The <link topic="filessection">[Files]</link> section flag <tt>notimestamp</tt> prevents storing a file timestamp in the compiled installer, improving reproducible builds and making supply-chain verification easier.</p>
+</li>
+
+<li>
+<p>Setup supports Windows AppLocker publisher conditions, allowing enterprises to control which installers may execute based on publisher, product, version, and original filename metadata.</p>
+</li>
+
+<li>
+<p>Registration and unregistration of 32-bit DLLs is performed in an external process (<tt>regsvr32.exe</tt>), preventing buggy third-party DLLs from crashing Setup or Uninstall.</p>
+</li>
+
+</ul>
+
+<heading>Supply-Chain Security</heading>
+
+<p>Several measures are in place to protect the integrity of Inno Setup's own distribution, from source code to the release installers that you download:</p>
+
+<ul>
+
+<li>
+<p>Official Inno Setup releases are built on a dedicated, separate build machine with restricted internet access. This reduces the risk of the build environment being compromised by malware or unauthorized modifications.</p>
+</li>
+
+<li>
+<p>The release build process verifies precompiled C/C++ object files (decompressor components for LZMA, LZMA2, and 7-Zip) using <link topic="issig">.issig signatures</link> before they are linked into the Delphi projects. The <extlink href="https://files.jrsoftware.org/is/misc/def01.ispublickey">public key</extlink> for these signatures is hosted separately from the source code repository. After compilation, all resulting binaries (compiler engine, preprocessor, Setup/Uninstall, the setup loader, and the final installer) are signed with .issig signatures as well. This ensures that any tampering with precompiled files or build outputs is detected.</p>
+</li>
+
+<li>
+<p>Third-party source code (7-Zip, LZMA SDK, zlib, bzip2, Scintilla) is maintained in separate vendor repositories. When a new upstream version is released, the changes are reviewed before being integrated. This prevents compromised or malicious upstream code from entering Inno Setup unnoticed. Precompiled binaries are rebuilt from these reviewed sources and signed with <link topic="issigtool">ISSigTool</link>.</p>
+</li>
+
+<li>
+<p>Pascal Script (based on RemObjects Pascal Script) is included in the source tree and maintained directly as part of Inno Setup. It is covered by an extensive unit test script that verifies all language features.</p>
+</li>
+
+<li>
+<p>Official releases are hosted as <extlink href="https://github.com/jrsoftware/issrc/releases">immutable GitHub Releases</extlink>, signed with <link topic="issigtool">ISSigTool</link>, rather than on a shared web hosting server. This makes it harder for an attacker to tamper with distributed files. The <extlink href="https://files.jrsoftware.org/is/misc/def02.ispublickey">public key</extlink> for these releases is hosted separately.</p>
+</li>
+
+<li>
+<p>An <extlink href="https://raw.githubusercontent.com/jrsoftware/issrc/refs/heads/main/SBOM.spdx.json">SPDX Software Bill of Materials</extlink> is included with the source code, documenting third-party dependencies with versions where available, licenses, and download locations.</p>
 </li>
 
 </ul>
