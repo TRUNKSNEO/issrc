@@ -4005,11 +4005,13 @@ Source: "MyLibrary.dll"; DestDir: "{sys}"; Flags: 64bit
 
 <heading>Privilege and Elevation Handling</heading>
 
-<p>All Inno Setup executables request no special privileges in their manifest (<tt>asInvoker</tt>). When administrative privileges are needed, Setup respawns itself with elevation. This allows Setup to run unprivileged when possible, for example for per-user installations with <link topic="setup_privilegesrequired">PrivilegesRequired</link> set to <tt>lowest</tt>.</p>
+<p>All Inno Setup executables request no special privileges in their manifest (<tt>asInvoker</tt>). For administrative installs, Setup respawns itself with elevation. This allows Setup to run unprivileged when possible, for example for per-user installations with <link topic="setup_privilegesrequired">PrivilegesRequired</link> set to <tt>lowest</tt>.</p>
 
 <p>The <tt>HKA</tt> registry root and "auto" constants (such as <tt>{autopf}</tt> and <tt>{autoappdata}</tt>) automatically map to machine-wide locations in administrative install mode and per-user locations in non-administrative install mode, reducing privilege-mode mistakes in scripts that support both.</p>
 
-<p><link topic="runsection">[Run]</link> entries support the <tt>runascurrentuser</tt> and <tt>runasoriginaluser</tt> flags for controlling which credentials child processes inherit. <link topic="runsection">[UninstallRun]</link> entries support <tt>runascurrentuser</tt>; <tt>runasoriginaluser</tt> is valid only in <link topic="runsection">[Run]</link>.</p>
+<p><link topic="runsection">[Run]</link> entries support the <tt>runascurrentuser</tt> and <tt>runasoriginaluser</tt> flags for controlling which privileges the program is started with. <link topic="runsection">[UninstallRun]</link> entries support <tt>runascurrentuser</tt>; <tt>runasoriginaluser</tt> is valid only in <link topic="runsection">[Run]</link>.</p>
+
+<p>When a user clicks a link in text displayed by <link topic="setup_licensefile">LicenseFile</link>, <link topic="setup_infobeforefile">InfoBeforeFile</link>, or <link topic="setup_infoafterfile">InfoAfterFile</link> during an administrative install, Setup tries to launch the target as the original user instead of the current user. This avoids unintentionally starting web browsers with administrative privileges.</p>
 
 <p>For administrative installs, the compiler warns if the script writes to per-user areas, because user-level files and settings should be handled by the application rather than an elevated installer. This is controlled by <link topic="setup_useduserareaswarning">UsedUserAreasWarning</link>.</p>
 
