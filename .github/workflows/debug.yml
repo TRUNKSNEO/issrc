@@ -9,7 +9,7 @@ env:
 jobs:
   msbuild:
     # Only set the topic `has-issrc-build-env` if the secrets are available
-    if: contains(github.event.repository.topics, 'has-issrc-build-env') && github.ref != 'refs/heads/copilot-review'
+    if: contains(github.event.repository.topics, 'has-issrc-build-env') && github.ref != 'refs/heads/code-review'
     runs-on: windows-latest
     steps:
       - name: Checkout
