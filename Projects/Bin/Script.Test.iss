@@ -94,6 +94,9 @@ begin
   case 5 of
     1..10: CheckTrue(True);
   end;
+  { Strange literals which Delphi accepts }
+  CheckEqualsInt64(0, $); { note that both Delphi and ROPS don't accept # or #$ }
+  CheckEqualsFloat(1., 1.0, 0.0);
 
   { Character literals }
   CheckEqualsString('A', #65);
