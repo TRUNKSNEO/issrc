@@ -1464,8 +1464,7 @@ begin
           end;
         '$':
           begin
-            if not ConsumeChars(HexDigitChars) then
-              CommitStyleSqPending(stPascalNumber);
+            ConsumeChars(HexDigitChars);
             CommitStyle(stPascalNumber);
           end;
         '#':
