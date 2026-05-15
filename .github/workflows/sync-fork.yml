@@ -1,7 +1,8 @@
 name: sync-fork
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '45 23 * * *'
+      timezone: "Europe/Amsterdam"
   workflow_dispatch:
 jobs:
   sync:
